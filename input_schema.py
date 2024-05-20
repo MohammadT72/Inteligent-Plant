@@ -6,6 +6,8 @@ from langchain.pydantic_v1 import BaseModel, Field
 # Define input schema (if needed)
 class GetCurrentTimeAndDateInput(BaseModel):
     dummy_field: str = Field(default="", description="A dummy field since no input is actually needed.")
+class GetSensorsDataInput(BaseModel):
+    dummy_field: list = Field(default=None, description="A list of sensors name which plant uses to check its health.")
 
 class CreateMemoryInput(BaseModel):
     description: str = Field(description="The description of the moment, event or the name plant wants to remember")

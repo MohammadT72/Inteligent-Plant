@@ -86,7 +86,7 @@ def parse_in_memory(description,mem_type='moment',title='None',priority='normal'
 #         parsed_mem=parse_out_memory(row)
 #         text+=parsed_mem
 #     return text
-def get_sensors_data(sen_list=None):
+def get_sensors_data_func(sen_list=None):
     """retireving the sensors data"""
     data={
         'temp':23,

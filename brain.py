@@ -10,16 +10,15 @@ from langchain import hub
 
 from langchain_community.utilities import ArxivAPIWrapper
 from langchain_community.tools import HumanInputRun
-from IPython.display import Audio, display
+# from IPython.display import Audio, display
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from langchain.agents import AgentExecutor,create_structured_chat_agent,\
  create_openai_tools_agent,create_tool_calling_agent,create_react_agent,load_tools
 
 
-from functions.general import *
-from functions.logics import *
-
+from tools import *
+from prompt import prompt
 import glob
 import os
 arxiv = ArxivAPIWrapper()
@@ -35,11 +34,9 @@ stt_tts_model = OpenAI(api_key=OPENAI_API_KEY)
 
 # prompt = hub.pull("hwchase17/structured-chat-agent")
 # prompt = hub.pull("hwchase17/react")
-prompt = hub.pull("hwchase17/openai-tools-agent")
+# prompt = hub.pull("hwchase17/openai-tools-agent")
 
-
-
-tools = [get_sensors_data, 
+tools = [get_sensors_data_tool, 
         #  get_weather_forcast,
         #  get_human_voice,
         #  create_plant_voice,

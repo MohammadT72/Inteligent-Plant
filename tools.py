@@ -71,10 +71,11 @@ from functions.general import *
 #     # coroutine= ... <- you can specify an async method if desired as well
 # )
 
-get_sensors_data = StructuredTool.from_function(
-    func=get_sensors_data,
+get_sensors_data_tool = StructuredTool.from_function(
+    func=get_sensors_data_func,
     name="get_sensors_data",
     description="A tool for retrieving the sensors data",
+    rgs_schema=GetSensorsDataInput,
     # coroutine= ... <- you can specify an async method if desired as well
 )
 # get_weather_forcast = StructuredTool.from_function(
