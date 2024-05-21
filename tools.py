@@ -1,6 +1,7 @@
 from langchain.tools import BaseTool, StructuredTool, tool
 from input_schema import *
 from functions.general import *
+
 # get_current_time_and_date_tool = StructuredTool.from_function(
 #     func=get_current_time_and_date,
 #     name="get_current_time_and_date",
@@ -76,7 +77,7 @@ get_sensors_data_tool = StructuredTool.from_function(
     name="get_sensors_data",
     description="A tool for retrieving the sensors data",
     rgs_schema=GetSensorsDataInput,
-    # coroutine= ... <- you can specify an async method if desired as well
+    coroutine=get_sensors_data_async_func,
 )
 # get_weather_forcast = StructuredTool.from_function(
 #     func=get_weather_forcast,

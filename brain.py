@@ -22,7 +22,7 @@ from prompt import prompt
 arxiv = ArxivAPIWrapper()
 human = HumanInputRun()
 
-OPENAI_API_KEY=""
+from api import OPENAI_API_KEY
 
 from langchain_openai import ChatOpenAI
 from openai import OpenAI
