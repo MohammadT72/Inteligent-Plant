@@ -16,6 +16,7 @@ from langchain_community.tools import HumanInputRun
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 
 from tools import *
+from functions.general import create_plant_voice_func
 from prompt import prompt
 from models import model
 # import glob
@@ -32,7 +33,7 @@ human = HumanInputRun()
 tools = [get_sensors_data_tool, 
         #  get_weather_forcast,
         #  get_human_voice,
-        #  create_plant_voice,
+        #  create_plant_voice_tool,
         #  get_all_memories,
         #  create_memory,
         #  check_the_date,
@@ -92,8 +93,8 @@ def invoke(message, history, speech=True):
     if not isinstance(response,type(None)):
       first_response = response['output']  # Capture the first response
       history.add_ai_message(first_response)
-    #   if speech:
-        #   create_plant_voice(first_response)
+      if speech:
+        create_plant_voice_func(first_response)
       return first_response  # Return the first response
 
 try:

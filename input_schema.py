@@ -25,7 +25,7 @@ class GetRemindersMemoryInput(BaseModel):
 class GetWeatherForcastInput(BaseModel):
     location: str = Field(description="The location of the weather forcast")
     day: str = Field(description="the day which the plant wants to know it's weather forcast")
-class CreatePplantVoiceInput(BaseModel):
+class CreatePlantVoiceInput(BaseModel):
     input_text: str = Field(description="The text that plant wants to converts to speech and play it")
 class SearchArxiveInput(BaseModel):
     query: str = Field(description="The query text that plant wants to search in arxiv web data base")

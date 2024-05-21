@@ -124,7 +124,7 @@ def get_sensors_data_func(sen_list=None):
 #     docs = arxiv.run(query)
 #     return docs
 
-def create_plant_voice(input_text=None):
+def create_plant_voice_func(input_text=None):
     """A tool that the plant can convert the text, or its thoughts to voice, so it can be played through speakers"""
     response = stt_tts_model.audio.speech.create(
         model="tts-1", voice="nova", input=input_text)

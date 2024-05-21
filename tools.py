@@ -77,7 +77,7 @@ get_sensors_data_tool = StructuredTool.from_function(
     name="get_sensors_data",
     description="A tool for retrieving the sensors data",
     rgs_schema=GetSensorsDataInput,
-    coroutine=get_sensors_data_async_func,
+    # coroutine=get_sensors_data_async_func,
 )
 # get_weather_forcast = StructuredTool.from_function(
 #     func=get_weather_forcast,
@@ -93,13 +93,13 @@ get_sensors_data_tool = StructuredTool.from_function(
 #     # coroutine= ... <- you can specify an async method if desired as well
 # )
 
-# create_plant_voice = StructuredTool.from_function(
-#     func=create_plant_voice,
-#     name="create_plant_voice",
-#     description="A tool that the plant can convert the text, or it's thoughts to voice, so it can be played through speakers",
-#     args_schema=CreatePplantVoiceInput,
-#     # coroutine= ... <- you can specify an async method if desired as well
-# )
+create_plant_voice_tool = StructuredTool.from_function(
+      func=create_plant_voice_func,
+      name="create_plant_voice",
+      description="A tool that the plant can convert the text, or it's thoughts to voice, so it can be played through speakers",
+     args_schema=CreatePlantVoiceInput,
+     # coroutine= ... <- you can specify an async method if desired as well
+     )
 
 # search_Arxiv = StructuredTool.from_function(
 #     func=search_Arxiv,
