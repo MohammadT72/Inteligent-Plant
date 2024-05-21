@@ -1,12 +1,13 @@
 # import glob
 import os
 from datetime import datetime
-from langchain_core.tools import ToolException
 from pydub import AudioSegment
 from pydub.playback import play
-# import simpleaudio as sa
-from functions.logics import *
+import sounddevice as sd
+import wavio
+import numpy as np
 from models import stt_tts_model
+from functions.logics import *
 
 # def play_a_song(name)-> None:
 #   '''This tool can play a song by it's name'''
@@ -97,8 +98,8 @@ def get_sensors_data_func(sen_list=None):
         'brightness':500,
     }
     data=parse_sensors_data(data)
-    if data['temp']==None or data['moisture']==None:
-      raise ToolException('The sensors data are not available.')
+    # if data['temp']==None or data['moisture']==None:
+      # raise ToolException('The sensors data are not available.')
     output_text=''
     for _,value in data.items():
       output_text+=value
@@ -111,14 +112,26 @@ def get_sensors_data_func(sen_list=None):
 #     loop = asyncio.get_event_loop()
 #     response=loop.run_until_complete(getweather(location,day))
 #     return response
+def record_voice(duration=5, fs=44100):
+  print("Recording...")
+  recording = sd.rec(int(duration * fs), samplerate=fs, channels=2, dtype=np.int16)
+  sd.wait()  # Wait until the recording is finished
+  print("Recording complete.")
+  return recording, fs
 
-# def get_human_voice(duration=None):
-#     """A tool that the plant can use to listen to the human voice, and understand what they say"""
-#     file_name=record_audio()
-#     audio_file= open(f"/content/{file_name}", "rb")
-#     transcription = stt_tts_model.audio.transcriptions.create(
-#         model='whisper-1',file=audio_file)
-#     return transcription.text
+# Save the recording to a file
+def save_recording(recording, fs, filename='plant_input_voice.wav'):
+    wavio.write(filename, recording, fs, sampwidth=2)
+    return filename
+
+def get_human_voice_func(filename,):
+  """A tool that the plant can use to listen to the human voice, and understand what they say"""
+  recording, fs = record_voice()
+  filename = save_recording(recording, fs)
+  response = stt_tts_model.audio.speech.recognize(
+          model="whisper-1", input=filename)
+  return response.text
+
 # def search_Arxiv(query=None):
 #     """A tool that the plant can search scientific articles in ArXive web database"""
 #     docs = arxiv.run(query)

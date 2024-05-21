@@ -16,7 +16,7 @@ from langchain_community.tools import HumanInputRun
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 
 from tools import *
-from functions.general import create_plant_voice_func
+from functions.general import create_plant_voice_func, get_human_voice_func
 from prompt import prompt
 from models import model
 # import glob
@@ -99,7 +99,8 @@ def invoke(message, history, speech=True):
 
 try:
    while True:
-      input_text=input('write here: ')
+      input_text=get_human_voice_func('human_voic.mp3')
+      # input_text=input('write here: ')
       response=invoke(input_text,history=chat_history)
       print(response)
 except KeyboardInterrupt:
