@@ -1,13 +1,13 @@
-import glob
+# import glob
 import os
 from datetime import datetime
 from langchain_core.tools import ToolException
-
+from pydub import AudioSegment
+from pydub.playback import play
+# import simpleaudio as sa
 from functions.logics import *
-from sensors.get_data import SerialReader
+from models import stt_tts_model
 
-# objects
-sens_reader=SerialReader()
 # def play_a_song(name)-> None:
 #   '''This tool can play a song by it's name'''
 #   display(Audio(f'/content/{name}.mp3',rate=44100, autoplay=True))
@@ -89,38 +89,19 @@ def parse_in_memory(description,mem_type='moment',title='None',priority='normal'
 #         parsed_mem=parse_out_memory(row)
 #         text+=parsed_mem
 #     return text
-
-async def get_sensors_data_async_func(sen_list=None):
-    """retireving the sensors data asynch"""
-    sens_reader.open_searial()
-    await sens_reader.get_data()
-    result=sens_reader.result
-    sens_reader.close_serial()
-    output_text=''
-    if result!=None:
-        data=parse_sensors_data(result)
-        if data['temp']==None or data['moisture']==None:
-            raise ToolException('The sensors data are not available.')
-        for _,value in data.item():
-            output_text+=value
-    else:
-        raise ToolException('The sensors data are not available.')
-    return output_text
-
 def get_sensors_data_func(sen_list=None):
     """retireving the sensors data"""
-    sens_reader.open_serial()
-    sens_reader.get_data()
-    result=sens_reader.result
+    data={
+        'temp':23,
+        'moisture':0.2,
+        'brightness':500,
+    }
+    data=parse_sensors_data(data)
+    if data['temp']==None or data['moisture']==None:
+      raise ToolException('The sensors data are not available.')
     output_text=''
-    if result!=None:
-        data=parse_sensors_data(result)
-        if data['temp']==None or data['moisture']==None:
-            raise ToolException('The sensors data are not available.')
-        for _,value in data.items():
-            output_text+=value
-    else:
-        raise ToolException('The sensors data are not available.')
+    for _,value in data.items():
+      output_text+=value
     return output_text
 # def get_weather_forcast(location='Tonekabon', day='today'):
 #     """A tool that the plant can use to extract a three day weather forcast"""
@@ -142,14 +123,21 @@ def get_sensors_data_func(sen_list=None):
 #     """A tool that the plant can search scientific articles in ArXive web database"""
 #     docs = arxiv.run(query)
 #     return docs
-# def create_plant_voice(input_text=None):
-#     """A tool that the plant can convert the text, or it's thoughts to voice, so it can be played through speakers"""
-#     response = stt_tts_model.audio.speech.create(
-#         model="tts-1", voice="nova",input=input_text)
-#     name='plant_output_voice.mp3'
-#     response.stream_to_file(name)
-#     display(Audio(f'/content/{name}',rate=44100, autoplay=True))
-#     return ''
+
+def create_plant_voice(input_text=None):
+    """A tool that the plant can convert the text, or its thoughts to voice, so it can be played through speakers"""
+    response = stt_tts_model.audio.speech.create(
+        model="tts-1", voice="nova", input=input_text)
+    name = 'plant_output_voice.mp3'
+    path=os.path.join(os.getcwd(),name)
+    response.stream_to_file(name)
+    
+    # Load the mp3 file and play it
+    audio = AudioSegment.from_mp3(path)
+    play(audio)
+    return ''
+
+
 # def get_current_time_and_date() -> str:
 #     """This tool returns the current date and time."""
 #     tehran = ZoneInfo('Asia/Tehran')

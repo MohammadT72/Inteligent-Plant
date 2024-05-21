@@ -17,17 +17,12 @@ from langchain.agents import AgentExecutor, create_openai_tools_agent
 
 from tools import *
 from prompt import prompt
+from models import model
 # import glob
 # import os
 arxiv = ArxivAPIWrapper()
 human = HumanInputRun()
 
-from api import OPENAI_API_KEY
-
-from langchain_openai import ChatOpenAI
-from openai import OpenAI
-model = ChatOpenAI(model="gpt-4o", openai_api_key=OPENAI_API_KEY)
-stt_tts_model = OpenAI(api_key=OPENAI_API_KEY)
 
 
 # prompt = hub.pull("hwchase17/structured-chat-agent")
