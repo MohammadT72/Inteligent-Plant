@@ -120,19 +120,18 @@ def record_voice(duration=5, fs=44100):
   return recording, fs
 
 # Save the recording to a file
-def save_recording(recording, fs, filename='plant_input_voice.wav'):
+def save_recording(recording, fs, filename='human_input_voice.wav'):
     wavio.write(filename, recording, fs, sampwidth=2)
     return filename
 
-def get_human_voice_func(filename,):
+def get_human_voice_func():
   """A tool that the plant can use to listen to the human voice, and understand what they say"""
   recording, fs = record_voice()
-  filename = save_recording(recording, fs)
-
-  audio_file = open(filename, "rb")
+  wav_filename = save_recording(recording, fs)
+  audio = AudioSegment.from_wav(wav_filename)
   transcription = stt_tts_model.audio.transcriptions.create(
       model="whisper-1", 
-      file=audio_file, 
+      file=audio, 
       response_format="text"
     )
   return transcription.text

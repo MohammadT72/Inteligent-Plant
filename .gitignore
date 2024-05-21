@@ -1,3 +1,5 @@
 api.py
 *.swp
 *.pyc
+*.mp3
+*.wav
