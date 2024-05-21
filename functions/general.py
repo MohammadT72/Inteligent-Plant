@@ -128,9 +128,14 @@ def get_human_voice_func(filename,):
   """A tool that the plant can use to listen to the human voice, and understand what they say"""
   recording, fs = record_voice()
   filename = save_recording(recording, fs)
-  response = stt_tts_model.audio.speech.recognize(
-          model="whisper-1", input=filename)
-  return response.text
+
+  audio_file = open(filename, "rb")
+  transcription = stt_tts_model.audio.transcriptions.create(
+      model="whisper-1", 
+      file=audio_file, 
+      response_format="text"
+    )
+  return transcription.text
 
 # def search_Arxiv(query=None):
 #     """A tool that the plant can search scientific articles in ArXive web database"""
