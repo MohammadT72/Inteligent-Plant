@@ -4,7 +4,10 @@ from datetime import datetime
 from langchain_core.tools import ToolException
 
 from functions.logics import *
+from sensors.get_data import SerialReader
 
+# objects
+sens_reader=SerialReader()
 # def play_a_song(name)-> None:
 #   '''This tool can play a song by it's name'''
 #   display(Audio(f'/content/{name}.mp3',rate=44100, autoplay=True))
@@ -86,19 +89,38 @@ def parse_in_memory(description,mem_type='moment',title='None',priority='normal'
 #         parsed_mem=parse_out_memory(row)
 #         text+=parsed_mem
 #     return text
+
+async def get_sensors_data_async_func(sen_list=None):
+    """retireving the sensors data asynch"""
+    sens_reader.open_searial()
+    await sens_reader.get_data()
+    result=sens_reader.result
+    sens_reader.close_serial()
+    output_text=''
+    if result!=None:
+        data=parse_sensors_data(result)
+        if data['temp']==None or data['moisture']==None:
+            raise ToolException('The sensors data are not available.')
+        for _,value in data.item():
+            output_text+=value
+    else:
+        raise ToolException('The sensors data are not available.')
+    return output_text
+
 def get_sensors_data_func(sen_list=None):
     """retireving the sensors data"""
-    data={
-        'temp':23,
-        'moisture':0.2,
-        'brightness':500,
-    }
-    data=parse_sensors_data(data)
-    if data['temp']==None or data['moisture']==None:
-      raise ToolException('The sensors data are not available.')
+    sens_reader.open_serial()
+    sens_reader.get_data()
+    result=sens_reader.result
     output_text=''
-    for _,value in data.items():
-      output_text+=value
+    if result!=None:
+        data=parse_sensors_data(result)
+        if data['temp']==None or data['moisture']==None:
+            raise ToolException('The sensors data are not available.')
+        for _,value in data.items():
+            output_text+=value
+    else:
+        raise ToolException('The sensors data are not available.')
     return output_text
 # def get_weather_forcast(location='Tonekabon', day='today'):
 #     """A tool that the plant can use to extract a three day weather forcast"""
