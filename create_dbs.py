@@ -1,5 +1,8 @@
 import sqlite3
 from sqlite3 import Error
+from functions.face_recognition.general import create_embedding_db
+
+create_embedding_db()
 
 def create_connection():
     conn = None

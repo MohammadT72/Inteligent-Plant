@@ -12,3 +12,4 @@ pydub
 simpleaudio
 sounddevice
 wavio
+deepface

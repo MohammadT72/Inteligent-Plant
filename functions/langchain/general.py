@@ -1,4 +1,6 @@
 # import glob
+import cv2
+import base64
 import os
 from datetime import datetime
 from pydub import AudioSegment
@@ -7,8 +9,8 @@ import sounddevice as sd
 import wavio
 import numpy as np
 from models import stt_tts_model
-from functions.logics import *
-
+from functions.langchain.logics import *
+from functions.face_recognition.general import verify_face_in_db
 # def play_a_song(name)-> None:
 #   '''This tool can play a song by it's name'''
 #   display(Audio(f'/content/{name}.mp3',rate=44100, autoplay=True))
@@ -20,6 +22,46 @@ from functions.logics import *
 #   display(Audio(selected_song,rate=44100, autoplay=True))
 #   return f"The song named {name} is playing"
 
+def encode_image(image_path, size):
+    # Read the image using cv2
+    image = cv2.imread(image_path)
+
+    # Resize the image
+    resized_image = cv2.resize(image, size, interpolation=cv2.INTER_AREA)
+
+    # Encode the image to JPEG format
+    _, buffer = cv2.imencode('.jpg', resized_image)
+
+    # Encode the bytes buffer to base64
+    return base64.b64encode(buffer).decode('utf-8')
+def capture_and_save_image(output_filename='captured_image.jpg'):
+    # Open a connection to the default camera (usually the first camera)
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Error: Could not open camera.")
+        return
+    # Read a frame from the camera
+    ret, frame = cap.read()
+    
+    if not ret:
+        print("Error: Could not read frame.")
+        return
+    # Save the captured frame to a file
+    cv2.imwrite(output_filename, frame)
+    # Release the camera
+    cap.release()
+
+def recognize_a_face_func():
+  capture_and_save_image()
+  base_path = os.getcwd()
+  captured_image_path = os.path.join(base_path,'captured_image.jpg')
+  db_path = os.path.join(base_path,'embeddings.db')
+  result = verify_face_in_db(captured_image_path,db_path)
+  if result != None:
+    names = ','.join(result)
+    return f"The recognized faces are {names}"
+  else:
+    return "No face detected"
 def parse_out_memory(memory_row):
   return f'date:{memory_row[0]} and description:{memory_row[-2]}. '
 def parse_in_memory(description,mem_type='moment',title='None',priority='normal'):
