@@ -25,7 +25,8 @@ class AudioProcessor:
         self.headers = {
             "Authorization": f"Bearer {self.api_key}"
         }
-
+        self.poor_connection_audio_path = r'/home/mohammadt72/myprojects/plant/pre_saved_voices/serious/internet_connection.wav'
+        self.goodbye_audio_path = r'/home/mohammadt72/myprojects/plant/pre_saved_voices/serious/goodbye.wav'
     def record_voice(self, fs=16000, channels=1):
         """Continuously record audio from the microphone until human voice is detected or no detection for 2 seconds."""
         p = pyaudio.PyAudio()
@@ -56,9 +57,9 @@ class AudioProcessor:
                 last_detection_time = time.time()
                 human_detection_num += 1
 
-            # Stop recording if no human voice detected for 2 seconds
-            if time.time() - last_detection_time > 3:
-                logging.info("No human voice detected for 2 seconds. Stopping recording.")
+            # Stop recording if no human voice detected for 5 seconds
+            if time.time() - last_detection_time > 5:
+                logging.info("No human voice detected for 5 seconds. Stopping recording.")
                 break
 
         logging.info(f"Recording complete. Total recording time: {time.time() - start_time:.2f} seconds")
@@ -257,6 +258,7 @@ class AudioProcessor:
                 headers=self.headers,
                 json=data
             )
+            print(response)
             mem_after = process.memory_info().rss
             logging.info(f"TTS request time: {time.time() - start_time:.2f} seconds")
             logging.info(f"TTS request memory usage: {(mem_after - mem_before) / (1024 * 1024):.2f} MB")
@@ -270,7 +272,7 @@ class AudioProcessor:
                 return response.content
             else:
                 logging.error(f"Request failed with status code {response.status_code}: {response.text}")
-                raise Exception(f"Request failed with status code {response.status_code}: {response.text}")
+                self.play_audio(self.poor_connection_audio_path)
         except Exception as e:
             logging.exception("An error occurred during text-to-speech conversion.")
             raise e

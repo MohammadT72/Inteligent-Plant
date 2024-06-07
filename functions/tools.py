@@ -1,5 +1,6 @@
 import json
-from test_logics import parse_sensors_data
+from functions.logics import parse_sensors_data
+
 def get_sensors_data_func(sen_list=None):
     """retireving the sensors data"""
     data={

@@ -6,7 +6,8 @@ from API import OPENAI_API_KEY
 
 # Sentences to process
 sentences = [
-    "Are you talking to me!!!?..........Are you talking to me!!!?..... Just kidding, Robert De Niro style, love it!?,.........checking the plant status....Pleas wait",
+    "Goodbye...My lovely friend...see you later!",
+    "Are you talking to me!!!?..........Are you talking to me!!!?..... Just kidding, Robert De Niro style,....love it!?,.........checking the plant status....Pleas wait",
     "Houston,......Houston......we have a problem......with a leaf!..... Fixing it right away.",
     "I'll be back... just pruning this plant!.....",
     "Why.....so....serious?.....Ha ha ha...I'm just adjusting the soil pH.....One moment!",
@@ -51,7 +52,7 @@ sentences = [
 def main():
     audio_processor = AudioProcessor(OPENAI_API_KEY)
     
-    for index, text in enumerate(sentences[:4]):
+    for index, text in enumerate(sentences[:2]):
         output_filename = f'audio_{index}.wav'
         output_filename = audio_processor.text_to_speech_to_file(text, output_filename=output_filename)
         print(f"Audio file saved as: {output_filename} (Sentence {index + 1})")

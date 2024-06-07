@@ -13,3 +13,6 @@ simpleaudio
 sounddevice
 wavio
 deepface
+pyaudio
+psutil
+webrtcvad
