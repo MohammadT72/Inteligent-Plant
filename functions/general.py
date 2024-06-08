@@ -1,23 +1,17 @@
-# functions.py
-import pyaudio
-import wave
-import io
-import requests
-import collections
 import logging
+import collections
 import time
-import psutil
-import base64
-import os
-import simpleaudio as sa
-from pydub import AudioSegment
-import webrtcvad
 import threading
 import queue
-import json
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+import io
+import wave
+import psutil
+import requests
+import simpleaudio as sa
+import pyaudio
+import torchaudio
+from pydub import AudioSegment
+from speechbrain.inference import VAD
 
 class AudioProcessor:
     def __init__(self, api_key):
@@ -27,6 +21,8 @@ class AudioProcessor:
         }
         self.poor_connection_audio_path = r'/home/mohammadt72/myprojects/plant/pre_saved_voices/serious/internet_connection.wav'
         self.goodbye_audio_path = r'/home/mohammadt72/myprojects/plant/pre_saved_voices/serious/goodbye.wav'
+        self.vad = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="/content/pretrained")
+
     def record_voice(self, fs=16000, channels=1):
         """Continuously record audio from the microphone until human voice is detected or no detection for 2 seconds."""
         p = pyaudio.PyAudio()
@@ -52,14 +48,14 @@ class AudioProcessor:
             buffer = self.save_wave(list(last_two_seconds), fs, channels)
 
             # Check if human voice is detected
-            human_detected = self.detect_voice_in_audio(buffer, offset_duration_ms=30, repeat_threshold=5)
+            human_detected = self.detect_voice_in_audio(buffer, fs, channels)
             if human_detected:
                 last_detection_time = time.time()
                 human_detection_num += 1
 
-            # Stop recording if no human voice detected for 5 seconds
-            if time.time() - last_detection_time > 5:
-                logging.info("No human voice detected for 5 seconds. Stopping recording.")
+            # Stop recording if no human voice detected for 2 seconds
+            if time.time() - last_detection_time > 2:
+                logging.info("No human voice detected for 2 seconds. Stopping recording.")
                 break
 
         logging.info(f"Recording complete. Total recording time: {time.time() - start_time:.2f} seconds")
@@ -72,7 +68,6 @@ class AudioProcessor:
 
     def save_wave(self, frames, fs, channels):
         """Save the recorded frames as a wave file in memory."""
-        start_time = time.time()
         buffer = io.BytesIO()
         wf = wave.open(buffer, 'wb')
         wf.setnchannels(channels)
@@ -96,44 +91,19 @@ class AudioProcessor:
         sample_rate = audio.frame_rate
 
         return pcm_data, sample_rate
-    def sample_generator(self, frame_duration_ms, offset_duration_ms, audio, sample_rate):
-        frame_size = int(sample_rate * frame_duration_ms / 1000) * 2  # Multiply by 2 for 16-bit audio
-        offset_size = int(sample_rate * offset_duration_ms / 1000) * 2  # Multiply by 2 for 16-bit audio
-        audio_length = len(audio)
-        for offset in range(0, audio_length - frame_size + 1, offset_size):
-            yield audio[offset:offset + frame_size]
 
-    def vad_collector(self, sample_rate, frame_duration_ms, vad, frames):
-        total_frames = 0
-        speech_frames = 0
-
-        for frame in frames:
-            is_speech = vad.is_speech(frame, sample_rate)
-            total_frames += 1
-
-            if is_speech:
-                speech_frames += 1
-
-        confidence = speech_frames / total_frames if total_frames > 0 else 0
-        return confidence
-    def detect_voice_in_audio(self, buffer, aggressiveness=3, frame_duration_ms=30, offset_duration_ms=500,
-                                    conf_threshold=0.7, repeat_threshold=10):
-        vad = webrtcvad.Vad(aggressiveness)
+    def detect_voice_in_audio(self, buffer, fs, channels, threshold=0.90):
         audio, sample_rate = self.read_wave(buffer)
-        frames = self.sample_generator(frame_duration_ms, offset_duration_ms, audio, sample_rate)
-        consecutive_chunks = 0
-        chunk_size_ms = 300  # Define the chunk size
-        chunk_duration_frames = chunk_size_ms // frame_duration_ms
+        tensor_audio = torchaudio.load(buffer, format="wav")[0]  # Load audio into tensor
+        tensor_audio = tensor_audio.unsqueeze(0)  # Add batch dimension
 
-        chunk_frames = []
-        for frame in frames:
-            chunk_frames.append(frame)
-            confidence = self.vad_collector(sample_rate, frame_duration_ms, vad, chunk_frames)
-            if confidence > conf_threshold:
-                consecutive_chunks += 1
-                if consecutive_chunks >= repeat_threshold:
-                    return True
-        return False
+        # Check if human voice is detected
+        return self.get_chunk_probability(tensor_audio, threshold)
+
+    def get_chunk_probability(self, buffer_chunk, threshold=0.90):
+        probs = self.vad.get_speech_prob_chunk(buffer_chunk)
+        return probs.max() >= threshold
+
     def get_human_voice(self, pre_saved_audio_filenames_5, pre_saved_audio_filenames_20):
         """A tool that the plant can use to listen to the human voice, and understand what they say."""
         def play_pre_saved_audio(audio_filenames, stop_event):
@@ -203,7 +173,7 @@ class AudioProcessor:
                 api_thread = threading.Thread(target=api_call, args=(files, response_queue, stop_event))
                 api_thread.start()
 
-                # Start the timers to play pre-saved audio after 5 and 10 seconds
+                # Start the timers to play pre-saved audio after 5 and 20 seconds
                 timer_thread_5 = threading.Thread(target=start_audio_timer, args=(pre_saved_audio_filenames_5, 5, stop_event))
                 timer_thread_20 = threading.Thread(target=start_audio_timer, args=(pre_saved_audio_filenames_20, 20, stop_event))
                 timer_thread_5.start()
