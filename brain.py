@@ -26,7 +26,7 @@ def main_loop():
 
     list_pre_saved_funny_voices = glob.glob(os.path.join(os.getcwd(),'pre_saved_voices','funny','*.wav'))
     list_pre_saved_serious_voices = glob.glob(os.path.join(os.getcwd(),'pre_saved_voices','serious','*.wav'))
-    index = random.randint(0,len(list_pre_saved_funny_voices))
+    index = random.randint(0,len(list_pre_saved_funny_voices)-1)
     pre_saved_audio_filenames_5 = [
         list_pre_saved_funny_voices[index],
     ]

@@ -1,4 +1,5 @@
 import logging
+import json
 import collections
 import time
 import threading
@@ -12,6 +13,12 @@ import pyaudio
 import torchaudio
 from pydub import AudioSegment
 from speechbrain.inference import VAD
+import torch
+import os
+import numpy as np
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class AudioProcessor:
     def __init__(self, api_key):
@@ -21,26 +28,27 @@ class AudioProcessor:
         }
         self.poor_connection_audio_path = r'/home/mohammadt72/myprojects/plant/pre_saved_voices/serious/internet_connection.wav'
         self.goodbye_audio_path = r'/home/mohammadt72/myprojects/plant/pre_saved_voices/serious/goodbye.wav'
-        self.vad = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="/content/pretrained")
+        self.vad = VAD.from_hparams(source="/home/mohammadt72/myprojects/plant/VAD", savedir="/home/mohammadt72/myprojects/plant/VAD")
 
-    def record_voice(self, fs=16000, channels=1):
+    def record_voice(self, fs=16000, channels=1, chunk_size=1024, max_silence=1):
         """Continuously record audio from the microphone until human voice is detected or no detection for 2 seconds."""
         p = pyaudio.PyAudio()
         stream = p.open(format=pyaudio.paInt16,
                         channels=channels,
                         rate=fs,
                         input=True,
-                        frames_per_buffer=1024)
+                        frames_per_buffer=chunk_size)
 
         logging.info("Recording...")
         frames = []
-        last_two_seconds = collections.deque(maxlen=int(fs / 1024 * 3))
+        num_chunks_for_two_seconds = int(fs * max_silence / chunk_size)
+        last_two_seconds = collections.deque(maxlen=num_chunks_for_two_seconds)
         start_time = time.time()
         last_detection_time = start_time
         human_detection_num = 0
 
         while True:
-            data = stream.read(1024)
+            data = stream.read(chunk_size)
             frames.append(data)
             last_two_seconds.append(data)
 
@@ -93,16 +101,15 @@ class AudioProcessor:
         return pcm_data, sample_rate
 
     def detect_voice_in_audio(self, buffer, fs, channels, threshold=0.90):
-        audio, sample_rate = self.read_wave(buffer)
-        tensor_audio = torchaudio.load(buffer, format="wav")[0]  # Load audio into tensor
-        tensor_audio = tensor_audio.unsqueeze(0)  # Add batch dimension
-
+        audio_segment = AudioSegment.from_file(buffer,format='wav')
+        samples = audio_segment.get_array_of_samples()
+        tensor_audio = torch.tensor(samples, dtype=torch.float16).unsqueeze(0)
         # Check if human voice is detected
         return self.get_chunk_probability(tensor_audio, threshold)
 
     def get_chunk_probability(self, buffer_chunk, threshold=0.90):
         probs = self.vad.get_speech_prob_chunk(buffer_chunk)
-        return probs.max() >= threshold
+        return probs.max().item() >= threshold
 
     def get_human_voice(self, pre_saved_audio_filenames_5, pre_saved_audio_filenames_20):
         """A tool that the plant can use to listen to the human voice, and understand what they say."""
@@ -150,7 +157,7 @@ class AudioProcessor:
 
             # Save the recorded audio to an in-memory wave file
             mem_before = process.memory_info().rss
-            audio_buffer = self.save_wave(frames, fs, channels)
+            audio_buffer = self.save_wave(list(frames), fs, channels)
             mem_after = process.memory_info().rss
             logging.info(f"Saving wave memory usage: {(mem_after - mem_before) / (1024 * 1024):.2f} MB")
 
@@ -272,11 +279,11 @@ class ChatBot:
         }
         self.history = [{"role": "system", "content": self.system_message}]
 
-    def make_chat_completion_request(self, messages):
+    def make_chat_completion_request(self,):
         """Send a chat completion request to the OpenAI API."""
         payload = {
             "model": "gpt-4o",
-            "messages": messages,
+            "messages": self.history,
             "temperature": 0.7,
             "n": 1,
             "stop": None,
@@ -285,14 +292,13 @@ class ChatBot:
         }
 
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=self.headers, json=payload)
-        response.raise_for_status()  # Raise an exception for HTTP errors
         response_json = response.json()
+        print(response_json)
         response_message = response_json['choices'][0]['message']
-        tool_calls = False
+        self.history.append(response_message)
+        response.raise_for_status()  # Raise an exception for HTTP errors
         if 'tool_calls' in response_message:
             tool_calls = response_json['choices'][0]['message']['tool_calls']
-        if tool_calls:
-            messages = [response_message]  # Extend conversation with assistant's reply
             for tool_call in tool_calls:
                 function_name = tool_call['function']['name']
                 function_to_call = self.tools['funcs'].get(function_name)
@@ -300,8 +306,7 @@ class ChatBot:
                 if function_to_call:
                     function_args = json.loads(tool_call['function']['arguments'])
                     function_response = function_to_call(**function_args)
-
-                    messages.append(
+                    self.history.append(
                         {
                             "tool_call_id": tool_call['id'],
                             "role": "tool",
@@ -309,10 +314,9 @@ class ChatBot:
                             "content": function_response,
                         }
                     )
-            self.history = self.history + messages
-            second_response = self.make_chat_completion_request(self.history)
+            second_response = self.make_chat_completion_request()
             return second_response
-        return response.json()
+        return response_message['content']
 
     def get_image_encoded(self, image_path):
         """Encode an image to base64."""
@@ -322,28 +326,11 @@ class ChatBot:
         return None
 
     def invoke(self, message, speech=True):
-        image_path = os.path.join(os.getcwd(), 'captured_image.jpg')
-        encoded_image = self.get_image_encoded(image_path)
-
-        if encoded_image:
-            self.history.append({
-                "role": "user",
-                "content": f"{message}",
-                "image_url": f"data:image/png;base64,{encoded_image}"
-            })
-            os.remove(image_path)
-        else:
-            self.history.append({
+        self.history.append({
                 "role": "user",
                 "content": message
             })
-
-        response = self.make_chat_completion_request(self.history)
-        response_message = response['choices'][0]['message']['content']
-        self.history.append({
-            "role": "assistant",
-            "content": response_message
-        })
+        response_message = self.make_chat_completion_request()
 
         if speech:
             audio_processor = AudioProcessor(self.api_key)

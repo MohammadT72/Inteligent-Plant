@@ -1,4 +1,4 @@
-from functions.tools import get_sensors_data_func
+from functions.tools import get_sensors_data_func,capture_and_save_image_func
 tools_jsons = [
         {
             "type": "function",
@@ -9,6 +9,26 @@ tools_jsons = [
             },
         },
         {
+            "type": "function",
+            "function": {
+                "name": "capture_and_save_image_tool",
+                "description": "capturing an image via camera module",
+                "parameters": {},
+            },
+        },
+    ]
+
+tools_funcs = {
+    'get_sensors_data_tool':get_sensors_data_func,
+    'capture_and_save_image_tool':capture_and_save_image_func,
+}
+
+tools={
+    'jsons':tools_jsons,
+    'funcs':tools_funcs,
+}
+'''
+      {
             "type": "function",
             "function": {
                 "name": "get_sensors_data_tool",
@@ -26,13 +46,5 @@ tools_jsons = [
                 },
             },
         }
-    ]
-
-tools_funcs = {
-    'get_sensors_data_tool':get_sensors_data_func,
-}
-
-tools={
-    'jsons':tools_jsons,
-    'funcs':tools_funcs
-}
+        
+'''

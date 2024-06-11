@@ -1,4 +1,6 @@
 import json
+import cv2
+import base64
 from functions.logics import parse_sensors_data
 
 def get_sensors_data_func(sen_list=None):
@@ -17,3 +19,35 @@ def get_sensors_data_func(sen_list=None):
     # for _,value in data.items():
     #   output_text+=value
     # return output_text
+'''
+def encode_image(image, size=(512,512)):
+    # Resize the image
+    resized_image = cv2.resize(image, size, interpolation=cv2.INTER_AREA)
+
+    # Encode the image to JPEG format
+    _, buffer = cv2.imencode('.jpg', resized_image)
+
+    # Encode the bytes buffer to base64
+    return base64.b64encode(buffer).decode('utf-8')
+'''
+def encode_image(image_path=r'/home/mohammadt72/myprojects/plant/captured_image.jpg'):
+  with open(image_path, "rb") as image_file:
+    return base64.b64encode(image_file.read()).decode('utf-8')
+def capture_and_save_image_func(output_filename='captured_image.jpg', device_num=8):
+    # Open a connection to the default camera (usually the first camera)
+    cap = cv2.VideoCapture(device_num)
+    if not cap.isOpened():
+        print("Error: Could not open camera.")
+        return json.dumps({ 'status': 'Camera is not working right now'})
+    # Read a frame from the camera
+    ret, frame = cap.read()
+    
+    if not ret:
+        print("Error: Could not read frame.")
+        return json.dumps({ 'status': 'Camera is not working right now'})
+    encoded_image = encode_image()
+    # Save the captured frame to a file
+    cv2.imwrite(output_filename, frame)
+    # Release the camera
+    cap.release()
+    return json.dumps({'type':'image_url','image_url':{'url':f'data:image/jpeg;base64,{encoded_image}'}})
