@@ -3,7 +3,7 @@ import serial
 import asyncio
 
 class SerialReader:
-    def __init__(self, port='/dev/ttyACM0', baudrate=9600, timeout=1.0):
+    def __init__(self, port='/dev/ttyUSB0', baudrate=12500, timeout=1.0):
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
@@ -39,7 +39,7 @@ class SerialReader:
             try:
                 while isinstance(self.result,type(None)):
                     if self.ser.in_waiting > 0:
-                        line = self.ser.readline().decode('utf-8')
+                        line = self.ser.readline().decode('utf-8', errors='ignore')
                         self.result=self.parse_result(line)
                         break
             except KeyboardInterrupt:

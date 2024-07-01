@@ -1,6 +1,12 @@
 import json
+import random
+import glob
+import time
 import cv2
 import base64
+import simpleaudio as sa
+import os
+from pygame import mixer
 from functions.logics import parse_sensors_data
 
 def get_sensors_data_func(sen_list=None):
@@ -30,6 +36,15 @@ def encode_image(image, size=(512,512)):
     # Encode the bytes buffer to base64
     return base64.b64encode(buffer).decode('utf-8')
 '''
+def play_music_func():
+    list_musics = glob.glob(os.path.join(os.getcwd(),'musics','*.mp3'))
+    index = random.randint(0,len(list_musics)-1)
+    mixer.init()
+    sound = mixer.Sound(list_musics[index])
+    playing = sound.play()
+    while mixer.get_busy():
+        time.sleep(1)
+    return json.dumps({'status':'the music is playing'})
 def encode_image(image_path=r'/home/mohammadt72/myprojects/plant/captured_image.jpg'):
   with open(image_path, "rb") as image_file:
     return base64.b64encode(image_file.read()).decode('utf-8')
@@ -50,4 +65,4 @@ def capture_and_save_image_func(output_filename='captured_image.jpg', device_num
     cv2.imwrite(output_filename, frame)
     # Release the camera
     cap.release()
-    return json.dumps({'type':'image_url','image_url':{'url':f'data:image/jpeg;base64,{encoded_image}'}})
+    return json.dumps([{'type':'text', 'text':'Describe what in the image'},{'type':'image_url','image_url':{'url':f'data:image/jpeg;base64,{encoded_image}'}}])

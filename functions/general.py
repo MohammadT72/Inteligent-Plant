@@ -30,7 +30,7 @@ class AudioProcessor:
         self.goodbye_audio_path = r'/home/mohammadt72/myprojects/plant/pre_saved_voices/serious/goodbye.wav'
         self.vad = VAD.from_hparams(source="/home/mohammadt72/myprojects/plant/VAD", savedir="/home/mohammadt72/myprojects/plant/VAD")
 
-    def record_voice(self, fs=16000, channels=1, chunk_size=1024, max_silence=1):
+    def record_voice(self, fs=16000, channels=1, chunk_size=4096, max_silence=1):
         """Continuously record audio from the microphone until human voice is detected or no detection for 2 seconds."""
         p = pyaudio.PyAudio()
         stream = p.open(format=pyaudio.paInt16,
@@ -102,7 +102,7 @@ class AudioProcessor:
 
     def detect_voice_in_audio(self, buffer, fs, channels, threshold=0.90):
         audio_segment = AudioSegment.from_file(buffer,format='wav')
-        samples = audio_segment.get_array_of_samples()
+        samples = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
         tensor_audio = torch.tensor(samples, dtype=torch.float16).unsqueeze(0)
         # Check if human voice is detected
         return self.get_chunk_probability(tensor_audio, threshold)
@@ -235,7 +235,6 @@ class AudioProcessor:
                 headers=self.headers,
                 json=data
             )
-            print(response)
             mem_after = process.memory_info().rss
             logging.info(f"TTS request time: {time.time() - start_time:.2f} seconds")
             logging.info(f"TTS request memory usage: {(mem_after - mem_before) / (1024 * 1024):.2f} MB")
@@ -272,6 +271,7 @@ class AudioProcessor:
 class ChatBot:
     def __init__(self, api_key, system_message, tools):
         self.api_key = api_key
+        self.audio_processor = AudioProcessor(self.api_key)
         self.system_message = system_message
         self.tools = tools
         self.headers = {
@@ -293,7 +293,6 @@ class ChatBot:
 
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=self.headers, json=payload)
         response_json = response.json()
-        print(response_json)
         response_message = response_json['choices'][0]['message']
         self.history.append(response_message)
         response.raise_for_status()  # Raise an exception for HTTP errors
@@ -333,12 +332,11 @@ class ChatBot:
         response_message = self.make_chat_completion_request()
 
         if speech:
-            audio_processor = AudioProcessor(self.api_key)
-            audio_content = audio_processor.create_plant_voice(response_message)
+            audio_content = self.audio_processor.create_plant_voice(response_message)
             audio = AudioSegment.from_file(io.BytesIO(audio_content), format='wav')
             output_filename = 'output_filename.wav'
             audio.export(output_filename, format='wav')
             logging.info(f"Audio content saved as '{output_filename}'")
-            audio_processor.play_audio(output_filename)
+            self.audio_processor.play_audio(output_filename)
 
         return response_message

@@ -1,4 +1,4 @@
-from functions.tools import get_sensors_data_func,capture_and_save_image_func
+from functions.tools import get_sensors_data_func,capture_and_save_image_func, play_music_func
 tools_jsons = [
         {
             "type": "function",
@@ -16,11 +16,20 @@ tools_jsons = [
                 "parameters": {},
             },
         },
+        {
+            "type": "function",
+            "function": {
+                "name": "play_music_tool",
+                "description": "play a music from the list musics",
+                "parameters": {},
+            },
+        },
     ]
 
 tools_funcs = {
     'get_sensors_data_tool':get_sensors_data_func,
     'capture_and_save_image_tool':capture_and_save_image_func,
+    'play_music_tool':play_music_func,
 }
 
 tools={
