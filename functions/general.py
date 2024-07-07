@@ -204,14 +204,14 @@ class AudioProcessor:
                     return response.text.strip()
                 else:
                     logging.error(f"Request failed with status code {response.status_code}: {response.text}")
-                    raise Exception(f"Request failed with status code {response.status_code}: {response.text}")
+                    return False
             else:
                 logging.info("Human voice not detected.")
                 return False
 
         except Exception as e:
             logging.exception("An error occurred during transcription.")
-            raise e
+            return False
 
     def create_plant_voice(self, text, voice='nova', response_format='wav', speed=1.0):
         """Convert text to speech using the OpenAI API."""
