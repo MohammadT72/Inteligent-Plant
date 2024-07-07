@@ -42,8 +42,6 @@ def play_music_func():
     mixer.init()
     sound = mixer.Sound(list_musics[index])
     playing = sound.play()
-    while mixer.get_busy():
-        time.sleep(1)
     return json.dumps({'status':'the music is playing'})
 def encode_image(image_path=r'/home/mohammadt72/myprojects/plant/captured_image.jpg'):
   with open(image_path, "rb") as image_file:
